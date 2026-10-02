@@ -31,6 +31,7 @@ et_xmlfile==2.0.0
 flexcache==0.3
 flexparser==0.4
 fsspec==2026.9.0
+gunicorn==26.2.0
 idna==3.20
 ijson==3.5.1
 isodate==0.7.2
