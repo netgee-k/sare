@@ -1,0 +1,316 @@
+{% extends "admin/base.html" %}
+{% load i18n %}
+
+{% block breadcrumbs %}{% endblock %}
+
+{% block content %}
+<style>
+  .inv { --line: rgba(128,128,128,.28); --soft: rgba(128,128,128,.06); --brand: #2563eb;
+         --in: #15803d; --out: #b91c1c; --low: #b45309; font-size: 13px; }
+  .inv * { box-sizing: border-box; }
+  .inv .num { font-variant-numeric: tabular-nums; }
+  .c-in { color: var(--in); } .c-out { color: var(--out); } .c-low { color: var(--low); }
+  .dark .c-in { color: #4ade80; } .dark .c-out { color: #f87171; } .dark .c-low { color: #fbbf24; }
+
+  .inv-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 8px; }
+  .inv-top h2 { margin: 0; font-size: 18px; font-weight: 700; }
+  .inv-actions { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin-bottom: 12px; }
+  .sep { width: 1px; height: 20px; background: var(--line); margin: 0 4px; }
+  .btn { display: inline-flex; align-items: center; gap: 5px; padding: 5px 11px; font-size: 12px; font-weight: 600;
+         border-radius: 6px; border: 1px solid var(--line); text-decoration: none; color: inherit;
+         background: transparent; cursor: pointer; line-height: 1.4; }
+  .btn:hover { background: var(--soft); }
+  .btn.pri { background: var(--brand); border-color: var(--brand); color: #fff; }
+  .btn.grn { background: var(--in); border-color: var(--in); color: #fff; }
+  .btn.red { background: var(--out); border-color: var(--out); color: #fff; }
+  .btn.pri:hover, .btn.grn:hover, .btn.red:hover { filter: brightness(1.1); }
+  .btn.sm { padding: 2px 8px; font-size: 11px; }
+  .tabs { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .tabs a { padding: 4px 10px; font-size: 12px; color: inherit; text-decoration: none; opacity: .7; }
+  .tabs a + a { border-left: 1px solid var(--line); }
+  .tabs a.on { background: var(--brand); color: #fff; opacity: 1; font-weight: 600; }
+
+  .kpis { display: grid; grid-template-columns: repeat(6, 1fr); border: 1px solid var(--line); border-radius: 8px;
+          margin-bottom: 12px; background: var(--soft); }
+  .kpi { padding: 10px 14px; border-left: 1px solid var(--line); min-width: 0; }
+  .kpi:first-child { border-left: 0; }
+  .kpi label { display: block; font-size: 10px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; opacity: .6; }
+  .kpi b { display: block; font-size: 22px; line-height: 1.25; font-weight: 700; }
+  .kpi small { font-size: 11px; opacity: .6; }
+
+  .cols { display: grid; grid-template-columns: minmax(0, 1.9fr) minmax(300px, 1fr); gap: 12px; align-items: start; }
+  .stack { display: grid; gap: 12px; min-width: 0; }
+  .panel { border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+  .panel > h3 { margin: 0; padding: 7px 12px; font-size: 10px; font-weight: 700; letter-spacing: .07em; text-transform: uppercase;
+                background: var(--soft); border-bottom: 1px solid var(--line); border-radius: 8px 8px 0 0;
+                display: flex; justify-content: space-between; align-items: center; }
+  .panel > h3 span { font-weight: 400; letter-spacing: 0; text-transform: none; opacity: .65; }
+  .body { padding: 10px 12px; }
+  .empty { padding: 10px 12px; opacity: .6; }
+
+  .chart { display: flex; align-items: flex-end; gap: 2px; height: 110px; border-bottom: 1px solid var(--line); }
+  .day { flex: 1; min-width: 0; height: 100%; display: flex; align-items: flex-end; gap: 1px; }
+  .day span { flex: 1; border-radius: 2px 2px 0 0; }
+  .day .i { background: #16a34a; } .day .o { background: #dc2626; }
+  .day:hover { background: rgba(37,99,235,.12); }
+  .axis { display: flex; justify-content: space-between; font-size: 10px; opacity: .55; margin-top: 4px; }
+  .legend { display: flex; gap: 12px; font-size: 11px; opacity: .75; margin-bottom: 6px; }
+  .legend i { display: inline-block; width: 8px; height: 8px; border-radius: 2px; margin-right: 4px; }
+
+  table.t { width: 100%; border-collapse: collapse; }
+  table.t th { text-align: left; font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; opacity: .55; padding: 5px 10px; }
+  table.t td { padding: 5px 10px; border-top: 1px solid var(--line); }
+  table.t tr:hover td { background: var(--soft); }
+  .r { text-align: right !important; } .ctr { text-align: center !important; }
+  .cell { text-align: center; font-weight: 700; cursor: pointer; }
+  .cell.none { opacity: .25; font-weight: 400; cursor: default; }
+  .cell.ok { background: rgba(22,163,74,.13); } .cell.low { background: rgba(217,119,6,.22); } .cell.out { background: rgba(220,38,38,.22); }
+  .cell:not(.none):hover { outline: 2px solid var(--brand); outline-offset: -2px; }
+  .tag { display: inline-block; padding: 1px 7px; border-radius: 99px; font-size: 11px; font-weight: 700; }
+  .tag.low { background: rgba(217,119,6,.2); color: var(--low); } .tag.out { background: rgba(220,38,38,.2); color: var(--out); }
+  .muted { opacity: .6; font-size: 11px; }
+  .hint { padding: 6px 12px; font-size: 11px; opacity: .6; border-top: 1px solid var(--line); }
+
+  .row { display: grid; grid-template-columns: 96px 1fr 38px; gap: 8px; align-items: center; padding: 3px 0; }
+  .row .n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .trk { height: 6px; background: rgba(128,128,128,.2); border-radius: 4px; overflow: hidden; }
+  .fil { height: 100%; background: var(--brand); } .fil.g { background: #16a34a; } .fil.r { background: #dc2626; } .fil.a { background: #d97706; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; }
+
+  #qm { padding: 10px 12px; display: grid; gap: 8px; }
+  .seg { display: grid; grid-template-columns: repeat(4, 1fr); border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .seg input { position: absolute; opacity: 0; pointer-events: none; }
+  .seg label { text-align: center; padding: 6px 2px; font-weight: 700; cursor: pointer; font-size: 11px; }
+  .seg label + input + label { border-left: 1px solid var(--line); }
+  .seg input:checked + label.in { background: var(--in); color: #fff; }
+  .seg input:checked + label.out { background: var(--out); color: #fff; }
+  .seg input:checked + label.ret { background: var(--brand); color: #fff; }
+  .seg input:checked + label.lost { background: #6b7280; color: #fff; }
+  .seg input:disabled + label { opacity: .3; cursor: not-allowed; }
+  #qm select, #qm input[type=number], #qm input[type=text] {
+      width: 100%; padding: 6px 8px; font-size: 13px; border: 1px solid var(--line); border-radius: 6px; background: transparent; color: inherit; }
+  #qm select option { color: #111; }
+  .f2 { display: grid; grid-template-columns: 80px 1fr; gap: 8px; }
+  #qm .go { width: 100%; justify-content: center; padding: 8px; font-size: 13px; }
+
+  @media (max-width: 1100px) { .cols { grid-template-columns: 1fr; } .kpis { grid-template-columns: repeat(3, 1fr); } }
+  @media (max-width: 700px) { .kpis { grid-template-columns: repeat(2, 1fr); } .kpi { border-top: 1px solid var(--line); } .two { grid-template-columns: 1fr; } }
+</style>
+
+<div class="inv">
+
+  <div class="inv-top">
+    <h2>Inventory overview</h2>
+    <div class="tabs">{% for p in periods %}<a href="?days={{ p }}" class="{% if p == days %}on{% endif %}">{{ p }} days</a>{% endfor %}</div>
+  </div>
+
+  <div class="inv-actions">
+    {% if perms.inventory.can_receive_stock %}<a class="btn grn" href="{% url 'admin:inventory_stockmovement_add' %}?movement_type=IN">+ Receive</a>{% endif %}
+    {% if perms.inventory.can_issue_stock %}<a class="btn red" href="{% url 'admin:inventory_stockmovement_add' %}?movement_type=OUT">- Issue</a>{% endif %}
+    {% if perms.inventory.can_return_stock %}<a class="btn pri" href="{% url 'admin:inventory_stockmovement_add' %}?movement_type=RETURN">Return</a>{% endif %}
+    {% if perms.inventory.can_writeoff_stock %}<a class="btn" href="{% url 'admin:inventory_stockmovement_add' %}?movement_type=LOSS">Write-off</a>{% endif %}
+    <span class="sep"></span>
+    {% if perms.inventory.add_stockitem %}<a class="btn" href="{% url 'admin:inventory_stockitem_add' %}">New item</a>{% endif %}
+    {% if perms.inventory.add_uniformtype %}<a class="btn" href="{% url 'admin:inventory_uniformtype_add' %}">New type</a>{% endif %}
+    <a class="btn" href="{% url 'admin:inventory_stockitem_changelist' %}">All stock</a>
+    <a class="btn" href="{% url 'admin:inventory_stockmovement_changelist' %}">History</a>
+    <span class="sep"></span>
+    <a class="btn" href="{% url 'report' 'stock' %}">Stock report</a>
+    <a class="btn" href="{% url 'report' 'movements' %}">Movement report</a>
+    <a class="btn" href="{% url 'report' 'holdings' %}">Who holds what</a>
+  </div>
+
+  <div class="kpis">
+    <div class="kpi"><label>In stock</label><b class="num">{{ total_stock }}</b><small>{{ item_count }} type/size lines</small></div>
+    <div class="kpi"><label>Received · {{ days }}d</label><b class="num c-in">+{{ added }}</b><small>new pieces</small></div>
+    <div class="kpi"><label>Issued · {{ days }}d</label><b class="num c-out">-{{ issued }}</b><small>written off {{ written_off }}</small></div>
+    <div class="kpi"><label>Returned · {{ days }}d</label><b class="num c-in">+{{ returned }}</b><small>net stock {% if net >= 0 %}+{% endif %}{{ net }}</small></div>
+    <div class="kpi"><label>Low stock</label><b class="num c-low">{{ low_count }}</b><small>at/below reorder level</small></div>
+    <div class="kpi"><label>Out of stock</label><b class="num c-out">{{ out_count }}</b><small>none left</small></div>
+  </div>
+
+  <div class="cols">
+
+    <div class="stack">
+
+      <div class="panel">
+        <h3>Movements per day <span>last {{ days }} days</span></h3>
+        <div class="body">
+          {% if peak %}
+            <div class="legend">
+              <span><i style="background:#16a34a"></i>Stock added (received + returned)</span>
+              <span><i style="background:#dc2626"></i>Stock removed (issued + written off)</span>
+            </div>
+            <div class="chart">
+              {% for s in series %}
+                <div class="day" title="{{ s.date|date:'D d M' }}: +{{ s.in }} added, -{{ s.out }} removed">
+                  <span class="i" style="height:{{ s.in_pct }}%"></span><span class="o" style="height:{{ s.out_pct }}%"></span>
+                </div>
+              {% endfor %}
+            </div>
+            <div class="axis">{% for d in axis %}<span>{{ d|date:"d M" }}</span>{% endfor %}</div>
+          {% else %}<div class="muted">No movements in this period.</div>{% endif %}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Stock grid <span>click a cell to move stock</span></h3>
+        {% if matrix_rows %}
+          <div style="overflow-x:auto">
+          <table class="t">
+            <thead><tr><th>Type</th>{% for s in sizes_present %}<th class="ctr">{{ s }}</th>{% endfor %}<th class="r">Total</th></tr></thead>
+            {% for row in matrix_rows %}
+              <tr>
+                <td>{{ row.name }}</td>
+                {% for c in row.cells %}
+                  <td class="cell num {{ c.level }}" {% if c.id %}onclick="invPick({{ c.id }})" title="Record a movement for this item"{% endif %}>{% if c.value is None %}-{% else %}{{ c.value }}{% endif %}</td>
+                {% endfor %}
+                <td class="r num"><b>{{ row.total }}</b></td>
+              </tr>
+            {% endfor %}
+          </table>
+          </div>
+          <div class="hint">Green in stock · amber at/below reorder level · red none left · dash not tracked</div>
+        {% else %}<div class="empty">Add stock items to see the grid.</div>{% endif %}
+      </div>
+
+      <div class="panel">
+        <h3>Recent movements <span><a href="{% url 'admin:inventory_stockmovement_changelist' %}">view all</a></span></h3>
+        <div style="overflow-x:auto">
+        <table class="t">
+          <thead><tr><th>Date</th><th>Item</th><th>Type</th><th class="r">Qty</th><th>Person / note</th></tr></thead>
+          {% for m in latest_movements %}
+            <tr>
+              <td class="num">{{ m.date|date:"d M" }}</td>
+              <td>{{ m.item }}</td>
+              <td class="{% if m.adds %}c-in{% else %}c-out{% endif %}"><b>{{ m.get_movement_type_display }}</b></td>
+              <td class="r num"><b>{{ m.quantity }}</b></td>
+              <td class="muted">{{ m.issued_to|default:m.note|default:"-" }}</td>
+            </tr>
+          {% empty %}<tr><td colspan="5" class="muted">No movements yet.</td></tr>{% endfor %}
+        </table>
+        </div>
+      </div>
+
+    </div>
+
+    <div class="stack">
+
+      <div class="panel">
+        <h3>Quick stock entry <span>keys: R I T W</span></h3>
+        <form id="qm" method="post" action="{% url 'quick_move' %}">
+          {% csrf_token %}
+          <input type="hidden" name="days" value="{{ days }}">
+          <div class="seg">
+            <input type="radio" name="movement_type" id="mt-IN" value="IN" {% if not perms.inventory.can_receive_stock %}disabled{% endif %}><label class="in" for="mt-IN" title="Receive new stock (R)">Receive</label>
+            <input type="radio" name="movement_type" id="mt-OUT" value="OUT" {% if not perms.inventory.can_issue_stock %}disabled{% endif %}><label class="out" for="mt-OUT" title="Issue to a person (I)">Issue</label>
+            <input type="radio" name="movement_type" id="mt-RETURN" value="RETURN" {% if not perms.inventory.can_return_stock %}disabled{% endif %}><label class="ret" for="mt-RETURN" title="Take back from a person (T)">Return</label>
+            <input type="radio" name="movement_type" id="mt-LOSS" value="LOSS" {% if not perms.inventory.can_writeoff_stock %}disabled{% endif %}><label class="lost" for="mt-LOSS" title="Lost or damaged (W)">Write-off</label>
+          </div>
+          <select name="item" required>
+            <option value="">Select item...</option>
+            {% for i in stock_options %}<option value="{{ i.id }}">{{ i.uniform_type.name }} - {{ i.size }} ({{ i.total }} in stock)</option>{% endfor %}
+          </select>
+          <div class="f2" id="qm-f2">
+            <input type="number" name="quantity" min="1" placeholder="Qty" required>
+            <input type="text" name="issued_to" id="qm-to" list="people" placeholder="Issued to (name)" autocomplete="off">
+          </div>
+          <input type="text" name="note" id="qm-note" placeholder="Note (optional)">
+          <datalist id="people">{% for p in people %}<option value="{{ p }}">{% endfor %}</datalist>
+          <button type="submit" class="btn pri go">Record movement</button>
+        </form>
+      </div>
+
+      <div class="panel">
+        <h3>Needs attention <span>{{ attention|length }}</span></h3>
+        {% if attention %}
+        <table class="t">
+          {% for item in attention|slice:":8" %}
+            <tr>
+              <td>{{ item }}</td>
+              <td class="r">{% if item.total <= 0 %}<span class="tag out">out</span>{% else %}<span class="tag low">{{ item.total }} left</span>{% endif %}</td>
+              <td class="r">{% if perms.inventory.can_receive_stock %}<button type="button" class="btn sm" onclick="invPick({{ item.id }}, 'IN')">Restock</button>{% endif %}</td>
+            </tr>
+          {% endfor %}
+        </table>
+        {% if attention|length > 8 %}<div class="hint">+{{ attention|length|add:"-8" }} more in the stock report</div>{% endif %}
+        {% else %}<div class="empty">Everything is well stocked.</div>{% endif %}
+      </div>
+
+      <div class="panel">
+        <h3>Holding uniforms now <span><a href="{% url 'report' 'holdings' %}">{{ holder_count }} people</a></span></h3>
+        <div class="body">
+          {% for h in holders %}
+            <div class="row"><span class="n">{{ h.person }}</span><div class="trk"><div class="fil a" style="width:{{ h.pct }}%"></div></div><b class="r num">{{ h.total }}</b></div>
+          {% empty %}<div class="muted">Nothing outstanding.</div>{% endfor %}
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Stock levels</h3>
+        <div class="body two">
+          <div>
+            <div class="muted" style="margin-bottom:2px">BY TYPE</div>
+            {% for r in type_rows %}<div class="row"><span class="n">{{ r.name }}</span><div class="trk"><div class="fil" style="width:{{ r.pct }}%"></div></div><b class="r num">{{ r.total }}</b></div>{% empty %}<div class="muted">No stock.</div>{% endfor %}
+          </div>
+          <div>
+            <div class="muted" style="margin-bottom:2px">BY SIZE</div>
+            {% for r in size_rows %}<div class="row"><span class="n">{{ r.name }}</span><div class="trk"><div class="fil" style="width:{{ r.pct }}%"></div></div><b class="r num">{{ r.total }}</b></div>{% empty %}<div class="muted">No stock.</div>{% endfor %}
+          </div>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Fastest moving <span>issued, {{ days }}d</span></h3>
+        <div class="body">
+          {% for f in fastest %}<div class="row"><span class="n">{{ f.item__uniform_type__name }} {{ f.item__size }}</span><div class="trk"><div class="fil r" style="width:{{ f.pct }}%"></div></div><b class="r num">{{ f.total }}</b></div>{% empty %}<div class="muted">Nothing issued.</div>{% endfor %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  (function () {
+    var f = document.getElementById('qm');
+    if (!f) return;
+    var to = document.getElementById('qm-to'), note = document.getElementById('qm-note'),
+        f2 = document.getElementById('qm-f2');
+    var CFG = {
+      IN:     { person: false, ph: '', note: 'Delivery note / supplier (optional)', needNote: false },
+      OUT:    { person: true,  ph: 'Issued to (name)', note: 'Note (optional)', needNote: false },
+      RETURN: { person: true,  ph: 'Returned by (name)', note: 'Condition (optional)', needNote: false },
+      LOSS:   { person: false, ph: 'Person responsible (optional)', note: 'Reason for write-off (required)', needNote: true }
+    };
+    function radio(t) { return f.querySelector('input[name=movement_type][value="' + t + '"]'); }
+    function setType(t) {
+      var r = radio(t); if (!r || r.disabled) return false;
+      r.checked = true;
+      var c = CFG[t], showPerson = c.person || t === 'LOSS';
+      to.style.display = showPerson ? '' : 'none';
+      f2.style.gridTemplateColumns = showPerson ? '80px 1fr' : '1fr';
+      to.placeholder = c.ph; to.required = c.person;
+      note.placeholder = c.note; note.required = c.needNote;
+      return true;
+    }
+    f.querySelectorAll('input[name=movement_type]').forEach(function (r) {
+      r.addEventListener('change', function () { setType(r.value); });
+    });
+    window.invPick = function (id, type) {
+      if (type) setType(type);
+      f.item.value = id;
+      f.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      f.quantity.focus();
+    };
+    var KEYS = { r: 'IN', i: 'OUT', t: 'RETURN', w: 'LOSS' };
+    document.addEventListener('keydown', function (e) {
+      var tag = (e.target.tagName || '').toLowerCase();
+      if (['input', 'select', 'textarea'].indexOf(tag) > -1 || e.ctrlKey || e.metaKey || e.altKey) return;
+      var t = KEYS[e.key.toLowerCase()];
+      if (t && setType(t)) { e.preventDefault(); f.item.focus(); }
+    });
+    ['IN', 'OUT', 'RETURN', 'LOSS'].some(setType);
+  })();
+</script>
+{% endblock %}

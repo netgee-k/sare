@@ -1,0 +1,188 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{ rep.title }} - Sare Inventory System</title>
+<style>
+  :root { --ink: #111111; --text: #333333; --mute: #6b6b6b; --line: #d4d4d8; --soft: #f4f4f5; --dark: #1f2937; }
+  * { box-sizing: border-box; }
+  body { margin: 0; font: 13px/1.5 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+         background: #ececec; -webkit-font-smoothing: antialiased; }
+
+  /* ---------- toolbar (screen only) ---------- */
+  .bar { position: sticky; top: 0; z-index: 5; background: var(--dark); color: #fff; padding: 8px 24px;
+         display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+  .bar a, .bar button { color: #e5e7eb; text-decoration: none; font: 600 12px system-ui; padding: 6px 13px; border-radius: 4px;
+                        border: 1px solid rgba(255,255,255,.25); background: transparent; cursor: pointer; white-space: nowrap; }
+  .bar a:hover, .bar button:hover { background: rgba(255,255,255,.12); color: #fff; }
+  .bar a.on { background: rgba(255,255,255,.2); border-color: rgba(255,255,255,.55); color: #fff; }
+  .bar .tabs { display: flex; gap: 6px; flex-wrap: wrap; margin-left: 10px; }
+  .bar .sp { flex: 1; }
+  .bar .go { background: #fff; color: var(--ink); border-color: #fff; }
+  .bar .go:hover { background: #e5e7eb; color: var(--ink); }
+
+  /* ---------- document ---------- */
+  .sheet { max-width: 1100px; margin: 24px auto; background: #fff; border: 1px solid var(--line);
+           padding: 34px 42px 24px; box-shadow: 0 6px 20px rgba(0,0,0,.08); }
+
+  .letterhead { display: flex; align-items: center; justify-content: space-between; gap: 20px; flex-wrap: wrap;
+                padding-bottom: 18px; border-bottom: 2px solid var(--ink); }
+  .lh-brand { display: flex; align-items: center; gap: 16px; min-width: 0; }
+  .logo { height: 68px; width: auto; max-width: 220px; object-fit: contain; display: block; flex: none; }
+  .org { font-size: 13px; font-weight: 800; letter-spacing: .14em; text-transform: uppercase; }
+  .gen { text-align: right; font-size: 12px; color: var(--mute); }
+  .gen strong { display: block; color: var(--ink); font-size: 13px; font-variant-numeric: tabular-nums; }
+
+  .titleblock { padding: 20px 0 16px; }
+  h1 { margin: 0; font-size: 24px; line-height: 1.2; font-weight: 800; letter-spacing: -.01em; }
+  .sub { margin-top: 4px; color: var(--mute); font-size: 13px; }
+
+  /* ---------- filters ---------- */
+  form.f { display: flex; flex-wrap: wrap; gap: 14px; align-items: end; margin: 0 0 18px; padding: 12px 14px;
+           background: var(--soft); border: 1px solid var(--line); border-radius: 4px; }
+  form.f label { display: grid; gap: 5px; font-size: 10px; font-weight: 700; color: var(--text);
+                 letter-spacing: .1em; text-transform: uppercase; }
+  form.f input, form.f select { padding: 7px 10px; font: 13px system-ui; border: 1px solid #b4b4bb; border-radius: 4px;
+                                background: #fff; color: var(--ink); min-width: 160px; }
+  form.f input:focus, form.f select:focus { outline: 0; border-color: var(--ink); box-shadow: 0 0 0 3px rgba(0,0,0,.12); }
+  form.f button { padding: 8px 22px; font: 600 12px system-ui; letter-spacing: .06em; text-transform: uppercase;
+                  border: 0; border-radius: 4px; background: var(--dark); color: #fff; cursor: pointer; }
+  form.f button:hover { background: #000; }
+
+  /* ---------- summary ---------- */
+  .figures { display: flex; flex-wrap: wrap; border: 1px solid var(--line); margin-bottom: 16px; }
+  .fig { flex: 1 1 150px; padding: 10px 16px; font-weight: 700; font-size: 13px; border-left: 1px solid var(--line); }
+  .fig:first-child { border-left: 0; }
+  .count { color: var(--mute); font-size: 11px; letter-spacing: .06em; text-transform: uppercase; font-weight: 600; margin: 0 0 6px; }
+
+  /* ---------- table ---------- */
+  .tablewrap { overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; min-width: 560px; }
+  th, td { border: 1px solid var(--line); padding: 8px 12px; text-align: left; vertical-align: middle; }
+  thead th { background: var(--soft); color: var(--ink); font-size: 11px; font-weight: 800; text-transform: uppercase;
+             letter-spacing: .07em; white-space: nowrap; border-bottom: 2px solid var(--ink); }
+  tbody tr:nth-child(even) td { background: #fafafa; }
+  tbody tr:hover td { background: var(--soft); }
+  .no { width: 44px; text-align: center; color: var(--mute); font-variant-numeric: tabular-nums; }
+  .r { text-align: right; font-variant-numeric: tabular-nums; }
+  .st { font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; white-space: nowrap; }
+  .st.good { font-weight: 600; color: var(--text); }
+  .st.bad { font-weight: 800; }
+  .none { padding: 36px 20px; text-align: center; color: var(--mute); border: 1px dashed #b4b4bb; }
+
+  /* ---------- footer ---------- */
+  .foot { margin-top: 26px; padding-top: 12px; border-top: 1px solid var(--line); text-align: center; font-size: 11px; color: var(--mute); }
+  .foot a { color: var(--ink); font-weight: 600; text-decoration: none; }
+  .foot a:hover { text-decoration: underline; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 760px) {
+    .bar { padding: 8px 12px; }
+    .bar .tabs { margin-left: 0; }
+    .bar .sp { display: none; }
+    .sheet { margin: 0; border-left: 0; border-right: 0; padding: 20px 14px; box-shadow: none; }
+    .letterhead { flex-direction: column; align-items: flex-start; gap: 12px; }
+    .gen { text-align: left; }
+    .logo { height: 54px; }
+    h1 { font-size: 20px; }
+    form.f { flex-direction: column; align-items: stretch; }
+    form.f input, form.f select { width: 100%; min-width: 0; font-size: 16px; }
+    form.f button { width: 100%; padding: 12px; }
+    .fig { flex-basis: 45%; border-top: 1px solid var(--line); }
+    th, td { padding: 7px 9px; }
+  }
+
+  /* ---------- print ---------- */
+  @page { margin: 14mm 12mm 16mm; @bottom-right { content: "Page " counter(page) " of " counter(pages); font: 9px system-ui; color: #555; } }
+  @media print {
+    body { background: #fff; font-size: 11.5px; }
+    .noprint { display: none !important; }
+    .sheet { margin: 0; border: 0; box-shadow: none; padding: 0; max-width: none; }
+    .tablewrap { overflow: visible; }
+    table { min-width: 0; }
+    thead { display: table-header-group; }
+    tr { break-inside: avoid; }
+    thead th { background: #eeeeee !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tbody tr:nth-child(even) td, tbody tr:hover td { background: #fff; }
+  }
+</style>
+</head>
+<body>
+
+<div class="bar noprint">
+  <a href="{% url 'admin:index' %}">&larr; Dashboard</a>
+  <div class="tabs">
+    <a href="{% url 'report' 'stock' %}" class="{% if rep.kind == 'stock' %}on{% endif %}">Stock</a>
+    <a href="{% url 'report' 'movements' %}" class="{% if rep.kind == 'movements' %}on{% endif %}">Movements</a>
+    <a href="{% url 'report' 'holdings' %}" class="{% if rep.kind == 'holdings' %}on{% endif %}">Who holds what</a>
+  </div>
+  <span class="sp"></span>
+  <button onclick="window.print()">Print</button>
+  <a class="go" href="?{% if qs %}{{ qs }}&{% endif %}format=xlsx">Excel</a>
+  <a href="?{% if qs %}{{ qs }}&{% endif %}format=csv">CSV</a>
+</div>
+
+<div class="sheet">
+
+  <header class="letterhead">
+    <div class="lh-brand">
+      <!-- Put your report logo in the static folder as report-logo.png -->
+      <img class="logo" src="{% static 'report-logo.png' %}" alt="Logo" onerror="this.style.display='none'">
+      <div class="org">Sare Inventory System</div>
+    </div>
+    <div class="gen">Generated<strong>{{ now|date:"d M Y, H:i" }}</strong></div>
+  </header>
+
+  <div class="titleblock">
+    <h1>{{ rep.title }}</h1>
+    <div class="sub">{{ rep.subtitle }}</div>
+  </div>
+
+  {% if rep.kind == 'movements' %}
+  <form class="f noprint" method="get">
+    <label>From <input type="date" name="start" value="{{ filters.start }}"></label>
+    <label>To <input type="date" name="end" value="{{ filters.end }}"></label>
+    <label>Type
+      <select name="type">
+        <option value="">All</option>
+        {% for value, label in type_choices %}<option value="{{ value }}" {% if filters.type == value %}selected{% endif %}>{{ label }}</option>{% endfor %}
+      </select>
+    </label>
+    <button type="submit">Apply filter</button>
+  </form>
+  {% endif %}
+
+  <div class="figures">{% for s in rep.summary %}<div class="fig">{{ s }}</div>{% endfor %}</div>
+
+  {% if rows %}
+  <p class="count">{{ rows|length }} record{{ rows|length|pluralize }}</p>
+  <div class="tablewrap">
+    <table>
+      <thead>
+        <tr>
+          <th class="no">#</th>
+          {% for name, kind in rep.columns %}<th {% if kind == 'n' %}class="r"{% endif %}>{{ name }}</th>{% endfor %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for row in rows %}
+          <tr>
+            <td class="no">{{ forloop.counter }}</td>
+            {% for c in row %}
+              <td class="{% if c.cls == 'r' %}r{% endif %}">{% if c.cls == 'good' or c.cls == 'bad' or c.cls == 'warn' %}<span class="st {{ c.cls }}">{{ c.v }}</span>{% else %}{{ c.v }}{% endif %}</td>
+            {% endfor %}
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+    <div class="none">No records to display for this report.</div>
+  {% endif %}
+
+  <div class="foot">&copy; {% now "Y" %} <a href="https://networksandcircuits.online" target="_blank" rel="noopener">Networksandcircuits.online</a>. All rights reserved.</div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,145 @@
+{% load static %}<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Sare Inventory System</title>
+<style>
+  :root { --blue: #2563eb; --blue-dark: #1d4ed8; --ink: #0f172a; --text: #374151; --mute: #6b7280; --line: #e2e8f0; }
+  * { box-sizing: border-box; }
+  html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+  body { margin: 0; font: 15px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; color: var(--ink);
+         background: #fff; min-height: 100vh; min-height: 100dvh; display: flex; flex-direction: column;
+         -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
+  .page { flex: 1; display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(360px, 1fr); }
+
+  /* ---------- left: logo + title ---------- */
+  .info { padding: clamp(28px, 5vw, 72px); display: flex; flex-direction: column; align-items: center;
+          justify-content: center; text-align: center; gap: clamp(18px, 2.4vw, 30px);
+          border-right: 1px solid var(--line); background: #fff; }
+  /* Logo is sized by height so any shape fits. Use a large file (or SVG) so it stays sharp. */
+  .logo { display: block; height: clamp(150px, 24vw, 280px); width: auto; max-width: min(100%, 520px);
+          object-fit: contain; image-rendering: auto; }
+  .info h1 { margin: 0; font-size: clamp(22px, 2.8vw, 34px); line-height: 1.15; font-weight: 800;
+             letter-spacing: .05em; text-transform: uppercase; color: var(--ink); overflow-wrap: anywhere; }
+
+  /* ---------- right: sign-in ---------- */
+  .side { display: grid; place-items: center; padding: clamp(20px, 4vw, 40px) clamp(16px, 4vw, 32px); background: #f8fafc; }
+  .card { width: 100%; max-width: 400px; border: 1px solid var(--line); border-radius: 14px; background: #fff;
+          padding: clamp(22px, 4vw, 32px);
+          box-shadow: 0 1px 2px rgba(15,23,42,.04), 0 14px 34px rgba(15,23,42,.08); }
+  .card h2 { margin: 0 0 4px; font-size: 22px; line-height: 1.2; letter-spacing: -.015em; }
+  .card .sub { margin: 0 0 22px; color: var(--mute); font-size: 14px; }
+  label { display: block; font-size: 12px; font-weight: 600; color: var(--text); margin: 0 0 6px; }
+  .field { margin-bottom: 16px; position: relative; }
+  input[type=text], input[type=password] { width: 100%; padding: 11px 13px; font: inherit; line-height: 1.3;
+          border: 1px solid #cbd5e1; border-radius: 8px; background: #fff; color: var(--ink);
+          transition: border-color .15s, box-shadow .15s; }
+  input[type=password] { padding-right: 62px; }
+  input:hover { border-color: #94a3b8; }
+  input:focus { outline: 0; border-color: var(--blue); box-shadow: 0 0 0 3px rgba(37,99,235,.18); }
+  .eye { position: absolute; right: 6px; bottom: 5px; height: 32px; padding: 0 10px; border: 0; border-radius: 6px;
+         background: none; color: var(--mute); font: 600 12px system-ui; cursor: pointer; }
+  .eye:hover { background: #f1f5f9; color: var(--ink); }
+  .btn { display: block; width: 100%; padding: 12px 14px; font: 600 15px system-ui; text-align: center; text-decoration: none;
+         color: #fff; background: var(--blue); border: 0; border-radius: 8px; cursor: pointer;
+         box-shadow: 0 1px 2px rgba(37,99,235,.35); transition: background .15s, transform .05s; }
+  .btn:hover { background: var(--blue-dark); }
+  .btn:active { transform: translateY(1px); }
+  .btn:focus-visible, .eye:focus-visible { outline: 3px solid rgba(37,99,235,.35); outline-offset: 2px; }
+  .btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); margin-top: 10px; box-shadow: none; }
+  .btn.ghost:hover { background: #f1f5f9; }
+  .err { background: #fef2f2; border: 1px solid #fecaca; color: #b91c1c; padding: 10px 12px; border-radius: 8px;
+         font-size: 13px; margin-bottom: 18px; }
+  .who { padding: 12px 14px; background: #f1f5f9; border-radius: 8px; margin-bottom: 16px; overflow-wrap: anywhere; }
+  .help { margin: 18px 0 0; font-size: 12px; color: var(--mute); text-align: center; }
+
+  /* ---------- footer ---------- */
+  footer { padding: 14px 20px calc(14px + env(safe-area-inset-bottom)); text-align: center; font-size: 12px;
+           color: var(--mute); border-top: 1px solid var(--line); background: #fff; }
+  footer a { color: var(--blue); font-weight: 600; text-decoration: none; }
+  footer a:hover { text-decoration: underline; }
+
+  /* ---------- responsive ---------- */
+  @media (max-width: 1100px) {
+    .page { grid-template-columns: minmax(0, 1fr) minmax(340px, 1fr); }
+  }
+  @media (max-width: 900px) {            /* tablet: stack, logo on top */
+    .page { grid-template-columns: 1fr; }
+    .info { border-right: 0; border-bottom: 1px solid var(--line); padding: 28px 24px; gap: 14px; }
+    .logo { height: clamp(110px, 26vw, 170px); }
+    .side { place-items: start center; padding-top: 28px; padding-bottom: 36px; }
+  }
+  @media (max-width: 600px) {            /* phone */
+    .info { padding: 22px 18px; }
+    .logo { height: 110px; }
+    .info h1 { font-size: 20px; }
+    .side { padding: 20px 14px 28px; }
+    .card { border-radius: 12px; }
+    input[type=text], input[type=password] { font-size: 16px; }   /* stops iOS zooming in on focus */
+    .btn { padding: 13px 14px; }
+  }
+  @media (max-width: 360px) {
+    .logo { height: 92px; }
+    .info h1 { font-size: 18px; }
+    .card { padding: 20px 16px; }
+  }
+  @media (min-width: 901px) and (max-height: 600px) {   /* short landscape screens */
+    .side { place-items: start center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <section class="info">
+    <img class="logo" src="{% static 'logo.png' %}" alt="Sare logo">
+  </section>
+
+  <main class="side">
+    <div class="card">
+      {% if request.user.is_authenticated and request.user.is_staff %}
+        <div class="who">Signed in as <strong>{{ request.user.get_username }}</strong></div>
+        <a class="btn" href="{% url 'admin:index' %}">Open dashboard</a>
+        <form method="post" action="{% url 'logout' %}">{% csrf_token %}<button class="btn ghost" type="submit">Sign out</button></form>
+      {% else %}
+        <h2>Sign in</h2>
+        <p class="sub">Authorised staff only.</p>
+
+        {% if form.errors %}
+          <div class="err">
+            {% for e in form.non_field_errors %}{{ e }}{% empty %}Please check your username and password.{% endfor %}
+          </div>
+        {% endif %}
+
+        <form method="post" action="{% url 'landing' %}">
+          {% csrf_token %}
+          <input type="hidden" name="next" value="{{ next|default:'' }}">
+          <div class="field">
+            <label for="id_username">Username</label>
+            <input type="text" name="username" id="id_username" value="{{ form.username.value|default:'' }}" autocomplete="username" autofocus required>
+          </div>
+          <div class="field">
+            <label for="id_password">Password</label>
+            <input type="password" name="password" id="id_password" autocomplete="current-password" required>
+            <button type="button" class="eye" id="eye">Show</button>
+          </div>
+          <button class="btn" type="submit">Sign in</button>
+        </form>
+        <p class="help">No account? Ask your administrator to create one for you.</p>
+      {% endif %}
+    </div>
+  </main>
+</div>
+
+<footer>&copy; {% now "Y" %} <a href="https://networksandcircuits.online" target="_blank" rel="noopener">Networksandcircuits.online</a>. All rights reserved.</footer>
+
+<script>
+  var eye = document.getElementById('eye');
+  if (eye) eye.addEventListener('click', function () {
+    var p = document.getElementById('id_password'), show = p.type === 'password';
+    p.type = show ? 'text' : 'password'; eye.textContent = show ? 'Hide' : 'Show';
+  });
+</script>
+</body>
+</html>
