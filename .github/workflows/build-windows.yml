@@ -1,0 +1,29 @@
+name: Build Windows program
+
+on:
+  workflow_dispatch:        # lets you press "Run workflow" on GitHub
+  push:
+    tags: ["v*"]            # or push a tag like v1.0
+
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Build Sare.exe
+        shell: cmd
+        run: build_windows.bat
+
+      - name: Zip the program
+        shell: pwsh
+        run: Compress-Archive -Path dist\Sare -DestinationPath Sare-windows.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Sare-windows
+          path: Sare-windows.zip

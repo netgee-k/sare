@@ -101,7 +101,7 @@ UNFOLD = {
                 "items": [
                     {"title": "Stock report", "icon": "inventory_2", "link": reverse_lazy("report", args=["stock"])},
                     {"title": "Movement report", "icon": "receipt_long", "link": reverse_lazy("report", args=["movements"])},
-                    {"title": "Who holds what", "icon": "badge", "link": reverse_lazy("report", args=["holdings"])},
+                    {"title": "Items on Issue", "icon": "badge", "link": reverse_lazy("report", args=["holdings"])},
                 ],
             },
             {
@@ -121,3 +121,31 @@ UNFOLD = {
         ],
     },
 }
+# ===================== Windows program / production mode =====================
+# Active inside the packaged Sare.exe. For testing from source, run with SARE_FROZEN=1.
+import sys
+
+FROZEN = bool(getattr(sys, "frozen", False) or os.environ.get("SARE_FROZEN"))
+
+STATIC_ROOT = BASE_DIR / "staticfiles"
+if (BASE_DIR / "static").exists():
+    STATICFILES_DIRS = [BASE_DIR / "static"]
+
+if FROZEN:
+    DEBUG = False
+    ALLOWED_HOSTS = ["*"]
+
+    # Data lives outside the program folder so updating the program never touches it.
+    DATA_DIR = Path(os.environ.get("SARE_DATA_DIR") or (Path(os.environ.get("LOCALAPPDATA") or Path.home()) / "Sare"))
+    DATA_DIR.mkdir(parents=True, exist_ok=True)
+    DATABASES["default"]["NAME"] = DATA_DIR / globals().get("DB_FILE", "db.sqlite3")
+
+    # A private secret key, created once and kept next to the database.
+    _key_file = DATA_DIR / "secret.key"
+    if not _key_file.exists():
+        from django.core.management.utils import get_random_secret_key
+        _key_file.write_text(get_random_secret_key())
+    SECRET_KEY = _key_file.read_text().strip()
+
+    # Serve CSS / JS / logos without a separate web server.
+    MIDDLEWARE.insert(1, "whitenoise.middleware.WhiteNoiseMiddleware")
