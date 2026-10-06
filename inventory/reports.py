@@ -59,7 +59,7 @@ def holdings_report():
     data = holdings()
     rows = [[h["person"], h["type"], h["size"], h["qty"]] for h in data]
     return {
-        "kind": "holdings", "title": "Who holds what", "sheet": "Holdings",
+        "kind": "holdings", "title": "Items on Issue", "sheet": "Holdings",
         "subtitle": "Issued minus returned, per person (names are matched ignoring capitals)",
         "columns": [("Person", "t"), ("Uniform type", "t"), ("Size", "t"), ("Pieces held", "n")],
         "rows": rows,

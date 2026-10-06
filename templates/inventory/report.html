@@ -115,7 +115,7 @@
   <div class="tabs">
     <a href="{% url 'report' 'stock' %}" class="{% if rep.kind == 'stock' %}on{% endif %}">Stock</a>
     <a href="{% url 'report' 'movements' %}" class="{% if rep.kind == 'movements' %}on{% endif %}">Movements</a>
-    <a href="{% url 'report' 'holdings' %}" class="{% if rep.kind == 'holdings' %}on{% endif %}">Who holds what</a>
+    <a href="{% url 'report' 'holdings' %}" class="{% if rep.kind == 'holdings' %}on{% endif %}">Items on Issue</a>
   </div>
   <span class="sp"></span>
   <button onclick="window.print()">Print</button>
