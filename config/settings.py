@@ -123,6 +123,7 @@ UNFOLD = {
 }
 # ===================== Windows program / production mode =====================
 # Active inside the packaged Sare.exe. For testing from source, run with SARE_FROZEN=1.
+import os
 import sys
 
 FROZEN = bool(getattr(sys, "frozen", False) or os.environ.get("SARE_FROZEN"))
