@@ -11,6 +11,8 @@ pyinstaller --noconfirm --clean --name Sare ^
   --add-data "templates;templates" --add-data "staticfiles;staticfiles" ^
   --collect-all unfold --collect-data django --collect-submodules django ^
   --collect-submodules inventory --collect-submodules config ^
+  --hidden-import config.settings --hidden-import config.urls --hidden-import config.wsgi ^
+  --hidden-import config.asgi --hidden-import config.middleware ^
   --hidden-import waitress --hidden-import whitenoise.middleware ^
   run_sare.py || exit /b 1
 
