@@ -1,9 +1,9 @@
- name: Build Windows program
+name: Build Windows program
 
 on:
   workflow_dispatch:        # lets you press "Run workflow" on GitHub
   push:
-    tags: ["v*"]            # pushing a tag like v1.2 builds AND publishes a release
+    tags: ["v*"]            # pushing a tag like v1.4 builds, tests AND publishes a release
 
 permissions:
   contents: write           # needed to attach the zip to a release
@@ -21,6 +21,10 @@ jobs:
       - name: Build Sare.exe
         shell: cmd
         run: build_windows.bat
+
+      - name: Test the built program
+        shell: pwsh
+        run: ./ci_smoke_test.ps1
 
       - name: Zip the program
         shell: pwsh
